@@ -1,0 +1,114 @@
+# Import libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.preprocessing import StandardScaler
+
+# Load the dataset
+data = pd.read_csv('data/loan_approval_dataset.csv')
+
+# Show the first few rows of the dataset
+data.head()
+
+# Check for missing values
+data.isnull().sum()
+
+# Fill missing values for numerical columns with mean
+data.fillna(data.mean(), inplace=True)
+
+# Check again for missing values
+data.isnull().sum()
+
+# Encode categorical columns ('education' and 'self_employed')
+data['education'] = data['education'].map({'Graduate': 1, 'Not Graduate': 0})
+data['self_employed'] = data['self_employed'].map({'Yes': 1, 'No': 0})
+
+# Display the transformed dataset
+data.head()
+
+# Visualizing the distribution of annual income
+plt.figure(figsize=(10, 6))
+sns.histplot(data['income_annum'], kde=True, color='blue')
+plt.title('Distribution of Annual Income')
+plt.xlabel('Annual Income')
+plt.ylabel('Frequency')
+plt.show()
+
+# Visualizing the correlation between features
+plt.figure(figsize=(12, 8))
+sns.heatmap(data.corr(), annot=True, cmap='coolwarm', fmt='.2f')
+plt.title('Correlation Matrix')
+plt.show()
+
+# Split the data into features (X) and target variable (y)
+X = data.drop(columns=['loan_id', 'loan_status'])
+y = data['loan_status']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Check the shapes of the resulting datasets
+X_train.shape, X_test.shape
+
+# Initialize the model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+
+# Train the model on the training data
+model.fit(X_train, y_train)
+
+# Predict the loan approval status on the test set
+y_pred = model.predict(X_test)
+
+# Evaluate the accuracy of the model
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy * 100:.2f}%")
+
+# Detailed classification report
+print("Classification Report:")
+print(classification_report(y_test, y_pred))
+
+# Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+plt.figure(figsize=(6, 6))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=['Denied', 'Approved'], yticklabels=['Denied', 'Approved'])
+plt.title('Confusion Matrix')
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.show()
+
+from sklearn.model_selection import GridSearchCV
+
+# Set up the hyperparameters to search
+param_grid = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [10, 20, 30],
+    'min_samples_split': [2, 5, 10]
+}
+
+# Initialize GridSearchCV
+grid_search = GridSearchCV(estimator=RandomForestClassifier(random_state=42), param_grid=param_grid, cv=5, scoring='accuracy')
+
+# Fit GridSearchCV to the data
+grid_search.fit(X_train, y_train)
+
+# Print the best parameters found
+print(f"Best Parameters: {grid_search.best_params_}")
+
+# Use the best model to predict
+best_model = grid_search.best_estimator_
+y_pred_best = best_model.predict(X_test)
+
+# Evaluate the best model
+accuracy_best = accuracy_score(y_test, y_pred_best)
+print(f"Best Model Accuracy: {accuracy_best * 100:.2f}%")
+
+
+
+
+
+
+
